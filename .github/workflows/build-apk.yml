@@ -19,14 +19,12 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-       
     
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-        
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -41,13 +39,13 @@ jobs:
       run: npm install @capacitor/cli @capacitor/core @capacitor/android
     
     - name: Initialize Capacitor
-      run: npx cap init "傻子大帝" "com.idlegame.shanzidadi" --web-dir=out --no-interactive
+      run: npx cap init "傻子大帝" "com.idlegame.shanzidadi" --web-dir out
     
     - name: Add Android platform
-      run: npx cap add android --no-interactive
+      run: npx cap add android
     
     - name: Sync Capacitor
-      run: npx cap sync android --no-interactive
+      run: npx cap sync android
     
     - name: Build APK
       run: |
