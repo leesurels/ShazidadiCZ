@@ -1,0 +1,66 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build Next.js static export
+      run: npm run build
+    
+    - name: Install Capacitor dependencies
+      run: npm install @capacitor/cli @capacitor/core @capacitor/android
+    
+    - name: Initialize Capacitor
+      run: npx cap init "傻子大帝" "com.idlegame.shanzidadi" --web-dir=out --no-interactive
+    
+    - name: Add Android platform
+      run: npx cap add android --no-interactive
+    
+    - name: Sync Capacitor
+      run: npx cap sync android --no-interactive
+    
+    - name: Build APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug --no-daemon
+    
+    - name: Verify APK exists
+      run: ls -la android/app/build/outputs/apk/debug/
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: shanzidadi-debug-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 7
