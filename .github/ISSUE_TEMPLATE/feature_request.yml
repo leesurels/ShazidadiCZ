@@ -1,0 +1,35 @@
+name: 功能请求
+description: 为游戏提出新功能或改进建议
+labels: enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ 功能描述
+        请描述您希望添加的功能或改进。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 功能详细描述
+      placeholder: 请详细描述您的建议...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 动机/使用场景
+      placeholder: 这个功能会解决什么问题？有什么使用场景？
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      placeholder: 您考虑过哪些替代方案？
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他信息
+      placeholder: 任何其他相关信息
