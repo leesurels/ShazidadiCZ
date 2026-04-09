@@ -3,11 +3,70 @@
 import React from 'react';
 import { useGameStore } from '@/game/store';
 import { openEventLog } from './EventLog';
+import { toast } from 'sonner';
 
 export default function TopBar() {
-  const { currentRank, setShowStatsPanel, notifications } = useGameStore();
+  const { currentRank, setShowStatsPanel, notifications, saveGame, setShowStartScreen, isRunning, currentSaveSlot, getCurrentSlotInfo } = useGameStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const currentSlotInfo = getCurrentSlotInfo();
+
+  // 保存游戏
+  const handleSave = () => {
+    saveGame();
+    const slotName = currentSaveSlot ? `存档${currentSaveSlot}` : '新存档';
+    toast.success(`💾 已保存至 ${slotName}`, {
+      duration: 2000,
+      style: {
+        background: 'linear-gradient(to bottom, #2a1500, #1a0a00)',
+        color: '#FFD700',
+        border: '1px solid rgba(218,165,32,0.4)',
+      },
+    });
+  };
+
+  // 返回主界面
+  const handleReturnToMain = () => {
+    if (isRunning) {
+      if (confirm('返回主界面？当前进度会自动保存。')) {
+        saveGame();
+        setShowStartScreen(true);
+      }
+    } else {
+      setShowStartScreen(true);
+    }
+  };
+
+  // 退出游戏
+  const handleExit = () => {
+    if (confirm('确定退出游戏？')) {
+      saveGame();
+      // 尝试关闭页面
+      try {
+        window.close();
+        // 如果无法关闭，显示提示
+        setTimeout(() => {
+          toast.info('🚪 请手动关闭此页面', {
+            duration: 3000,
+            style: {
+              background: 'linear-gradient(to bottom, #2a1500, #1a0a00)',
+              color: '#DAA520',
+              border: '1px solid rgba(218,165,32,0.4)',
+            },
+          });
+        }, 500);
+      } catch (e) {
+        toast.info('🚪 请手动关闭此页面', {
+          duration: 3000,
+          style: {
+            background: 'linear-gradient(to bottom, #2a1500, #1a0a00)',
+            color: '#DAA520',
+            border: '1px solid rgba(218,165,32,0.4)',
+          },
+        });
+      }
+    }
+  };
 
   return (
     <div
@@ -21,22 +80,32 @@ export default function TopBar() {
     >
       <div className="flex items-center gap-2">
         <span className="text-xl">👑</span>
-        <span
-          className="text-base font-bold tracking-wide"
-          style={{
-            color: '#FFD700',
-            fontFamily: 'serif',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-          }}
-        >
-          傻子大帝
-        </span>
+        <div className="flex flex-col">
+          <span
+            className="text-base font-bold tracking-wide leading-tight"
+            style={{
+              color: '#FFD700',
+              fontFamily: 'serif',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+            }}
+          >
+            傻子大帝
+          </span>
+          {currentSaveSlot && (
+            <span
+              className="text-[10px] leading-tight"
+              style={{ color: '#B8860B' }}
+            >
+              📜 存档{currentSaveSlot}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-2">
         {/* Victory rank badge */}
         <div
-          className="px-2 py-0.5 rounded-full text-xs font-bold"
+          className="px-2 py-0.5 rounded-full text-xs font-bold hidden sm:block"
           style={{
             background: 'rgba(218,165,32,0.2)',
             color: '#FFD700',
@@ -68,6 +137,36 @@ export default function TopBar() {
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
+        </button>
+
+        {/* Save button */}
+        <button
+          onClick={handleSave}
+          className="p-1.5 rounded transition-colors active:scale-90"
+          style={{ color: '#DAA520' }}
+          title={currentSaveSlot ? `保存到存档${currentSaveSlot}` : '保存游戏'}
+        >
+          <span className="text-base">💾</span>
+        </button>
+
+        {/* Return to main menu button */}
+        <button
+          onClick={handleReturnToMain}
+          className="p-1.5 rounded transition-colors active:scale-90"
+          style={{ color: '#DAA520' }}
+          title="返回主界面"
+        >
+          <span className="text-base">🏠</span>
+        </button>
+
+        {/* Exit button */}
+        <button
+          onClick={handleExit}
+          className="p-1.5 rounded transition-colors active:scale-90"
+          style={{ color: '#DAA520' }}
+          title="退出游戏"
+        >
+          <span className="text-base">🚪</span>
         </button>
 
         {/* Stats button */}

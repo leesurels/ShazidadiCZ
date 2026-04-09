@@ -1,6 +1,6 @@
 // ===== 傻子大帝 - Game Store (Zustand) =====
 import { create } from 'zustand';
-import { BuildingType, TerrainType, GameEventType, Season, TechType, type GameState, type ProductionRates, type GameEvent, type GameNotification, type EventForecast, type Tech, type Achievement, type Trader, type NeighborCity, type Resources } from './types';
+import { BuildingType, TerrainType, GameEventType, Season, TechType, type GameState, type ProductionRates, type GameEvent, type GameNotification, type EventForecast, type Tech, type Achievement, type Trader, type NeighborCity, type Resources, type SaveSlot, type SaveData } from './types';
 import {
   MAP_SIZE, TILE_WIDTH, TILE_HEIGHT,
   STARTING_RESOURCES, BUILDING_DEFS,
@@ -13,15 +13,22 @@ import {
   TECH_DEFS, ACHIEVEMENT_DEFS, NEIGHBOR_CITIES, TRADER_NAMES,
   TRADER_GOODS, TRADER_INTERVAL_MIN, TRADER_INTERVAL_MAX,
   TRADER_STAY_DURATION, EVENT_PREPARATION,
+  SAVE_SLOTS_COUNT, SAVE_KEY_PREFIX, SAVE_META_KEY,
 } from './constants';
 import { generateMap, findNearbyBuilding } from './mapGenerator';
 import type { Tile, Pedestrian } from './types';
 
 interface GameActions {
   // Game control
-  startNewGame: () => void;
-  loadGame: () => boolean;
+  startNewGame: (slotId?: number) => void;
+  loadGame: (slotId: number) => boolean;
   saveGame: () => void;
+  saveToSlot: (slotId: number) => void;
+  loadFromSlot: (slotId: number) => boolean;
+  deleteSlot: (slotId: number) => void;
+  getSaveSlots: () => SaveSlot[];
+  getSlotDetail: (slotId: number) => SaveSlot | null;
+  getCurrentSlotInfo: () => SaveSlot | null;
   setGameSpeed: (speed: number) => void;
   togglePause: () => void;
 
@@ -149,6 +156,8 @@ function getDefaultState(): GameState {
     // 统计
     buildingsDestroyed: 0,
     disastersSurvived: 0,
+    // 多存档系统
+    currentSaveSlot: null,
   };
 }
 
@@ -173,6 +182,28 @@ function hasRoadAccess(map: Tile[][], x: number, y: number): boolean {
 function hasFireStationCoverage(map: Tile[][], x: number, y: number): boolean {
   return findNearbyBuilding(map, x, y, BuildingType.FIRE_STATION,
     BUILDING_DEFS[BuildingType.FIRE_STATION]?.range || 6);
+}
+
+// ===== Helper: Check if there's a specific terrain type nearby =====
+function findNearbyTerrain(
+  map: Tile[][],
+  cx: number,
+  cy: number,
+  terrainType: TerrainType,
+  range: number
+): boolean {
+  for (let dy = -range; dy <= range; dy++) {
+    for (let dx = -range; dx <= range; dx++) {
+      const tx = cx + dx;
+      const ty = cy + dy;
+      if (tx >= 0 && tx < MAP_SIZE && ty >= 0 && ty < MAP_SIZE) {
+        if (map[ty][tx].terrain === terrainType) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 // ===== Helper: Count guard towers in the city =====
@@ -620,103 +651,190 @@ const ROAD_EXEMPT_BUILDINGS = new Set([
   BuildingType.IRON_MINE,
 ]);
 
+// ===== Helper: Find first empty save slot =====
+function findFirstEmptySlot(): number {
+  for (let i = 1; i <= SAVE_SLOTS_COUNT; i++) {
+    const slotKey = `${SAVE_KEY_PREFIX}${i}`;
+    if (!localStorage.getItem(slotKey)) {
+      return i;
+    }
+  }
+  return 1; // 如果都满了，返回第一个槽位
+}
+
 export const useGameStore = create<GameStore>((set, get) => ({
   ...getDefaultState(),
 
-  startNewGame: () => {
-    localStorage.removeItem(SAVE_KEY);
+  // ===== 多存档系统辅助函数 =====
+  getSaveSlots: () => {
+    const slots: SaveSlot[] = [];
+    for (let i = 1; i <= SAVE_SLOTS_COUNT; i++) {
+      const slotKey = `${SAVE_KEY_PREFIX}${i}`;
+      const saved = localStorage.getItem(slotKey);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          const meta = data._meta as SaveSlot;
+          slots.push(meta);
+        } catch (e) {
+          // 损坏的存档，标记为空槽
+          slots.push({
+            id: i,
+            name: `存档${i}`,
+            timestamp: 0,
+            population: 0,
+            year: 0,
+            season: Season.SPRING,
+            currentRank: '无',
+            playTime: 0,
+          });
+        }
+      } else {
+        // 空槽位
+        slots.push({
+          id: i,
+          name: `存档${i}`,
+          timestamp: 0,
+          population: 0,
+          year: 0,
+          season: Season.SPRING,
+          currentRank: '无',
+          playTime: 0,
+        });
+      }
+    }
+    return slots;
+  },
+
+  getSlotDetail: (slotId: number) => {
+    const slots = get().getSaveSlots();
+    return slots.find(s => s.id === slotId) || null;
+  },
+
+  getCurrentSlotInfo: () => {
+    const { currentSaveSlot } = get();
+    if (currentSaveSlot === null) return null;
+    return get().getSlotDetail(currentSaveSlot);
+  },
+
+  deleteSlot: (slotId: number) => {
+    const slotKey = `${SAVE_KEY_PREFIX}${slotId}`;
+    localStorage.removeItem(slotKey);
+    // 如果删除的是当前存档位，重置状态
+    if (get().currentSaveSlot === slotId) {
+      set({ currentSaveSlot: null });
+    }
+  },
+
+  startNewGame: (slotId?: number) => {
+    // 如果指定了存档位，使用该存档位，否则找第一个空槽
+    const targetSlot = slotId || findFirstEmptySlot();
+    const slotKey = `${SAVE_KEY_PREFIX}${targetSlot}`;
+    
+    // 清除该存档位
+    localStorage.removeItem(slotKey);
+    
     const state = getDefaultState();
     state.showStartScreen = false;
     state.isRunning = true;
-    const halfMapW = (MAP_SIZE * TILE_WIDTH) / 2;
-    const halfMapH = (MAP_SIZE * TILE_HEIGHT) / 2;
-    const startWorldX = 3 * TILE_WIDTH + TILE_WIDTH / 2 - halfMapW;
-    const startWorldY = 3 * TILE_HEIGHT + TILE_HEIGHT / 2 - halfMapH;
-    state.cameraX = -startWorldX;
-    state.cameraY = -startWorldY;
+    state.currentSaveSlot = targetSlot;
     set(state);
+    
+    // 立即保存到指定槽位
+    get().saveToSlot(targetSlot);
   },
 
-  loadGame: () => {
+  loadFromSlot: (slotId: number) => {
+    const slotKey = `${SAVE_KEY_PREFIX}${slotId}`;
     try {
-      const saved = localStorage.getItem(SAVE_KEY);
+      const saved = localStorage.getItem(slotKey);
       if (saved) {
         const data = JSON.parse(saved);
         if (data.mapSize !== MAP_SIZE) {
-          localStorage.removeItem(SAVE_KEY);
+          console.error('存档地图大小不匹配');
           return false;
         }
-        data.showStartScreen = false;
-        data.showStatsPanel = false;
-        data.showBuildingInfo = false;
-        data.showTechPanel = false;
-        data.showEventForecast = false;
-        data.showAchievementPanel = false;
-        data.showTraderPanel = false;
-        data.victoryNotification = null;
-        data.isRunning = true;
+        // 移除内部元数据
+        const { _meta, ...gameData } = data;
+        
+        gameData.showStartScreen = false;
+        gameData.showStatsPanel = false;
+        gameData.showBuildingInfo = false;
+        gameData.showTechPanel = false;
+        gameData.showEventForecast = false;
+        gameData.showAchievementPanel = false;
+        gameData.showTraderPanel = false;
+        gameData.victoryNotification = null;
+        gameData.isRunning = true;
+        gameData.currentSaveSlot = slotId;
+        
         // Ensure defaults for new fields
-        if (!data.notifications) data.notifications = [];
-        if (!data.activeEvents) data.activeEvents = [];
-        if (!data.lastEventTick) data.lastEventTick = -100;
-        if (!data.pedestrians) data.pedestrians = [];
-        if (!data.workersNeeded) data.workersNeeded = 0;
-        if (!data.workersAvailable) data.workersAvailable = 0;
-        if (!data.storageCapacity) data.storageCapacity = BASE_STORAGE;
-        if (!data.lastTradeTick) data.lastTradeTick = -100;
-        if (!data.showMarketTrade) data.showMarketTrade = false;
+        if (!gameData.notifications) gameData.notifications = [];
+        if (!gameData.activeEvents) gameData.activeEvents = [];
+        if (!gameData.lastEventTick) gameData.lastEventTick = -100;
+        if (!gameData.pedestrians) gameData.pedestrians = [];
+        if (!gameData.workersNeeded) gameData.workersNeeded = 0;
+        if (!gameData.workersAvailable) gameData.workersAvailable = 0;
+        if (!gameData.storageCapacity) gameData.storageCapacity = BASE_STORAGE;
+        if (!gameData.lastTradeTick) gameData.lastTradeTick = -100;
+        if (!gameData.showMarketTrade) gameData.showMarketTrade = false;
         // Season system
-        if (!data.currentSeason) data.currentSeason = Season.SPRING;
-        if (!data.daysInSeason) data.daysInSeason = 0;
-        if (!data.year) data.year = 1;
+        if (!gameData.currentSeason) gameData.currentSeason = Season.SPRING;
+        if (!gameData.daysInSeason) gameData.daysInSeason = 0;
+        if (!gameData.year) gameData.year = 1;
         // Tech system
-        if (!data.unlockedBuildings) data.unlockedBuildings = [...INITIAL_UNLOCKED_BUILDINGS];
-        if (!data.researchedTechs) data.researchedTechs = [];
-        if (!data.currentResearch) data.currentResearch = null;
-        if (!data.researchProgress) data.researchProgress = 0;
+        if (!gameData.unlockedBuildings) gameData.unlockedBuildings = [...INITIAL_UNLOCKED_BUILDINGS];
+        if (!gameData.researchedTechs) gameData.researchedTechs = [];
+        if (!gameData.currentResearch) gameData.currentResearch = null;
+        if (!gameData.researchProgress) gameData.researchProgress = 0;
         // Event forecast
-        if (!data.eventForecasts) data.eventForecasts = [];
-        if (!data.lastForecastTick) data.lastForecastTick = -100;
+        if (!gameData.eventForecasts) gameData.eventForecasts = [];
+        if (!gameData.lastForecastTick) gameData.lastForecastTick = -100;
         // Resources expansion
-        if (data.resources.wheat === undefined) data.resources.wheat = 0;
-        if (data.resources.flour === undefined) data.resources.flour = 0;
-        if (data.resources.bread === undefined) data.resources.bread = 0;
-        if (data.resources.clay === undefined) data.resources.clay = 0;
-        if (data.resources.iron === undefined) data.resources.iron = 0;
-        if (data.resources.tools === undefined) data.resources.tools = 0;
+        if (gameData.resources.wheat === undefined) gameData.resources.wheat = 0;
+        if (gameData.resources.flour === undefined) gameData.resources.flour = 0;
+        if (gameData.resources.bread === undefined) gameData.resources.bread = 0;
+        if (gameData.resources.clay === undefined) gameData.resources.clay = 0;
+        if (gameData.resources.iron === undefined) gameData.resources.iron = 0;
+        if (gameData.resources.tools === undefined) gameData.resources.tools = 0;
         // Achievements
-        if (!data.achievements) data.achievements = ACHIEVEMENT_DEFS.map(a => ({ ...a }));
-        if (!data.unlockedAchievements) data.unlockedAchievements = [];
+        if (!gameData.achievements) gameData.achievements = ACHIEVEMENT_DEFS.map(a => ({ ...a }));
+        if (!gameData.unlockedAchievements) gameData.unlockedAchievements = [];
         // Neighbor cities
-        if (!data.neighborCities) data.neighborCities = NEIGHBOR_CITIES.map(c => ({ ...c }));
+        if (!gameData.neighborCities) gameData.neighborCities = NEIGHBOR_CITIES.map(c => ({ ...c }));
         // Stats
-        if (!data.buildingsDestroyed) data.buildingsDestroyed = 0;
-        if (!data.disastersSurvived) data.disastersSurvived = 0;
-        if (!data.peakPopulation) data.peakPopulation = data.population || 0;
-        if (!data.totalResourcesProduced) data.totalResourcesProduced = {};
+        if (!gameData.buildingsDestroyed) gameData.buildingsDestroyed = 0;
+        if (!gameData.disastersSurvived) gameData.disastersSurvived = 0;
+        if (!gameData.peakPopulation) gameData.peakPopulation = gameData.population || 0;
+        if (!gameData.totalResourcesProduced) gameData.totalResourcesProduced = {};
         // Ensure houseLevel exists
-        if (data.map) {
+        if (gameData.map) {
           for (let y = 0; y < MAP_SIZE; y++) {
             for (let x = 0; x < MAP_SIZE; x++) {
-              if (data.map[y][x].houseLevel === undefined) {
-                data.map[y][x].houseLevel = 0;
+              if (gameData.map[y][x].houseLevel === undefined) {
+                gameData.map[y][x].houseLevel = 0;
               }
             }
           }
         }
-        set(data);
+        set(gameData);
         return true;
       }
     } catch (e) {
-      console.error('Failed to load game:', e);
+      console.error('Failed to load game from slot:', e);
     }
     return false;
   },
 
-  saveGame: () => {
+  // 向后兼容的 loadGame 方法
+  loadGame: (slotId: number) => {
+    return get().loadFromSlot(slotId);
+  },
+
+  saveToSlot: (slotId: number) => {
     try {
       const state = get();
-      const saveData = {
+      const saveData: SaveData & { _meta: SaveSlot } = {
         map: state.map,
         mapSize: state.mapSize,
         resources: state.resources,
@@ -737,30 +855,51 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastEventTick: state.lastEventTick,
         lastTradeTick: state.lastTradeTick,
         pedestrians: state.pedestrians,
-        // Season
         currentSeason: state.currentSeason,
         daysInSeason: state.daysInSeason,
         year: state.year,
-        // Tech
         unlockedBuildings: state.unlockedBuildings,
         researchedTechs: state.researchedTechs,
         currentResearch: state.currentResearch,
         researchProgress: state.researchProgress,
-        // Forecast
         eventForecasts: state.eventForecasts,
         lastForecastTick: state.lastForecastTick,
-        // Achievements
         achievements: state.achievements,
         unlockedAchievements: state.unlockedAchievements,
-        // Trader
         neighborCities: state.neighborCities,
-        // Stats
         buildingsDestroyed: state.buildingsDestroyed,
         disastersSurvived: state.disastersSurvived,
+        // 元数据
+        _meta: {
+          id: slotId,
+          name: `存档${slotId}`,
+          timestamp: Date.now(),
+          population: state.population,
+          year: state.year,
+          season: state.currentSeason,
+          currentRank: state.currentRank,
+          playTime: state.tickCount,
+        },
       };
-      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+      const slotKey = `${SAVE_KEY_PREFIX}${slotId}`;
+      localStorage.setItem(slotKey, JSON.stringify(saveData));
+      set({ currentSaveSlot: slotId });
     } catch (e) {
-      console.error('Failed to save game:', e);
+      console.error('Failed to save game to slot:', e);
+    }
+  },
+
+  // 保存到当前存档位
+  saveGame: () => {
+    const { currentSaveSlot } = get();
+    if (currentSaveSlot !== null) {
+      get().saveToSlot(currentSaveSlot);
+    } else {
+      // 如果没有当前存档位（新游戏），自动保存到第一个空位
+      const firstEmpty = findFirstEmptySlot();
+      if (firstEmpty !== null) {
+        get().saveToSlot(firstEmpty);
+      }
     }
   },
 
@@ -796,6 +935,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     if (tile.building !== null) return false;
     if (tile.terrain === TerrainType.FOREST) return false;
+
+    // Check for required nearby terrain (e.g., Fisher Hut needs water)
+    if (def.needsNearbyTerrain) {
+      if (!findNearbyTerrain(state.map, x, y, def.needsNearbyTerrain.type, def.needsNearbyTerrain.range)) {
+        return false;
+      }
+    }
 
     const { resources } = state;
     if (resources.gold < def.cost.gold) return false;
@@ -1306,6 +1452,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
             }
           }
 
+          // Check for required nearby terrain (e.g., Fisher Hut needs water)
+          if (canProduce && def.needsNearbyTerrain) {
+            canProduce = findNearbyTerrain(newMap, x, y, def.needsNearbyTerrain.type, def.needsNearbyTerrain.range);
+          }
+
           // Road access check
           if (canProduce && !ROAD_EXEMPT_BUILDINGS.has(tile.building)) {
             canProduce = hasRoadAccess(newMap, x, y);
@@ -1746,6 +1897,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
             } else if (def.needsNearby.type === BuildingType.WAREHOUSE) {
               canProduce = findNearbyBuilding(state.map, x, y, BuildingType.WAREHOUSE, def.needsNearby.range);
             }
+          }
+          // Check for required nearby terrain (e.g., Fisher Hut needs water)
+          if (canProduce && def.needsNearbyTerrain) {
+            canProduce = findNearbyTerrain(state.map, x, y, def.needsNearbyTerrain.type, def.needsNearbyTerrain.range);
           }
           if (canProduce && !ROAD_EXEMPT_BUILDINGS.has(tile.building)) {
             canProduce = hasRoadAccess(state.map, x, y);

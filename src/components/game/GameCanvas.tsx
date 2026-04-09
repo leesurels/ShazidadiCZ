@@ -28,20 +28,11 @@ export default function GameCanvas() {
     const rect = container.getBoundingClientRect();
     renderer.resize(rect.width, rect.height);
 
-    // Set initial camera to center on the starting area (top-left 6x6)
-    // Map is centered at world origin (0,0): tile(x,y) world pos = (x*TW - halfMapW, y*TH - halfMapH)
-    const halfMapW = (MAP_SIZE * TILE_WIDTH) / 2;
-    const halfMapH = (MAP_SIZE * TILE_HEIGHT) / 2;
-    // Starting area center at tile (3, 3)
-    const startWorldX = 3 * TILE_WIDTH + TILE_WIDTH / 2 - halfMapW;
-    const startWorldY = 3 * TILE_HEIGHT + TILE_HEIGHT / 2 - halfMapH;
-    const initCameraX = -startWorldX;
-    const initCameraY = -startWorldY;
-
+    // Initialize camera to center the map on screen (only if at default position)
+    // Map center (tile 30,30) should appear at screen center when cameraX=0, cameraY=0
     const state = useGameStore.getState();
-    // Only set camera if it's at the default initial position
     if (state.cameraX === 0 && state.cameraY === 0 && !state.showStartScreen) {
-      state.setCamera(initCameraX, initCameraY);
+      // Camera is already at (0,0), map will be centered - no action needed
     }
 
     // Create input handler

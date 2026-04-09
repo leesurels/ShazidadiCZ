@@ -174,6 +174,8 @@ export const BUILDING_UNLOCKS: Record<BuildingType, { population?: number; tech?
   [BuildingType.CLAY_PIT]: { population: 60 },
   [BuildingType.IRON_MINE]: { population: 200, tech: TechType.IRON_WORKING },
   [BuildingType.BLACKSMITH]: { population: 250, tech: TechType.IRON_WORKING },
+  // 前期食物建筑
+  [BuildingType.FISHER_HUT]: { population: 20 },
 };
 
 // 初始解锁建筑
@@ -187,6 +189,8 @@ export const INITIAL_UNLOCKED_BUILDINGS: BuildingType[] = [
   BuildingType.QUARRY,
   BuildingType.BRIDGE,
   BuildingType.GARDEN,
+  // 前期食物建筑
+  BuildingType.HUNTER_HUT,
 ];
 
 // Building definitions
@@ -411,6 +415,26 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     range: 8,
     desirabilityBonus: 5,
   },
+  // ===== 前期食物建筑 =====
+  [BuildingType.HUNTER_HUT]: {
+    type: BuildingType.HUNTER_HUT,
+    name: '猎人小屋',
+    emoji: '🏹',
+    cost: { gold: 12, wood: 3, stone: 0 },
+    color: '#8B4513',
+    production: { food: 2 },
+    workersNeeded: 2,
+  },
+  [BuildingType.FISHER_HUT]: {
+    type: BuildingType.FISHER_HUT,
+    name: '渔人小屋',
+    emoji: '🎣',
+    cost: { gold: 10, wood: 4, stone: 0 },
+    color: '#4682B4',
+    production: { food: 3 },
+    needsNearbyTerrain: { type: TerrainType.WATER, range: 2 },
+    workersNeeded: 2,
+  },
 };
 
 // Building order for UI
@@ -418,6 +442,9 @@ export const BUILD_ORDER: BuildingType[] = [
   BuildingType.HOUSE,
   BuildingType.ROAD,
   BuildingType.BRIDGE,
+  // 前期食物建筑
+  BuildingType.HUNTER_HUT,
+  BuildingType.FISHER_HUT,
   BuildingType.FARM,
   BuildingType.WELL,
   BuildingType.WAREHOUSE,
@@ -463,6 +490,9 @@ export const DESIRABILITY_EFFECTS: Record<string, number> = {
   [BuildingType.IRON_MINE]: -4,
   [BuildingType.BLACKSMITH]: -2,
   [BuildingType.UNIVERSITY]: 5,
+  // 前期食物建筑
+  [BuildingType.HUNTER_HUT]: -1,
+  [BuildingType.FISHER_HUT]: 0,
 };
 
 // Food consumption
@@ -510,7 +540,7 @@ export const MIN_ZOOM = 0.3;
 export const MAX_ZOOM = 3.0;
 
 // Touch thresholds
-export const TAP_THRESHOLD = 10;
+export const TAP_THRESHOLD = 15;
 export const LONG_PRESS_DURATION = 500;
 
 // Auto-save interval
@@ -518,6 +548,11 @@ export const AUTO_SAVE_INTERVAL = 30000;
 
 // Save key
 export const SAVE_KEY = 'shazi-di-da-save';
+
+// ===== 多存档系统常量 =====
+export const SAVE_SLOTS_COUNT = 3;  // 存档位数量
+export const SAVE_KEY_PREFIX = 'shazi-di-da-save-';  // 存档键前缀
+export const SAVE_META_KEY = 'shazi-di-da-save-meta';  // 存档元信息键
 
 // Terrain colors
 export const TERRAIN_COLORS = {

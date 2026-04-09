@@ -31,6 +31,9 @@ export enum BuildingType {
   IRON_MINE = 'iron_mine', // 铁矿：产出铁矿
   BLACKSMITH = 'blacksmith', // 铁匠铺：铁+粘土→工具
   UNIVERSITY = 'university', // 大学：加速科技研究
+  // 前期食物建筑
+  HUNTER_HUT = 'hunter_hut',      // 猎人小屋：无条件产出食物
+  FISHER_HUT = 'fisher_hut',      // 渔人小屋：需要靠近水域
 }
 
 export enum Season {
@@ -200,6 +203,7 @@ export interface BuildingDef {
   populationCapacity?: number;
   range?: number;
   needsNearby?: { type: BuildingType; range: number; resource?: string };
+  needsNearbyTerrain?: { type: TerrainType; range: number }; // 需要靠近特定地形（如渔人小屋需要靠近水域）
   workersNeeded?: number;
   storageBonus?: number;
   requiredTech?: TechType; // 需要科技解锁
@@ -319,6 +323,9 @@ export interface GameState {
   // ===== 历史统计 =====
   buildingsDestroyed: number;
   disastersSurvived: number;
+
+  // ===== 多存档系统 =====
+  currentSaveSlot: number | null;  // 当前使用的存档位（null表示新游戏未保存）
 }
 
 export interface TradeOption {
@@ -372,4 +379,53 @@ export interface RenderState {
   demolishPreview: boolean;
   animationTime: number;
   pedestrians: Pedestrian[];
+}
+
+// ===== 多存档系统 =====
+export interface SaveSlot {
+  id: number;           // 存档位编号 1-3
+  name: string;         // 存档名称
+  timestamp: number;    // 保存时间戳
+  population: number;   // 人口数
+  year: number;         // 游戏年份
+  season: Season;      // 当前季节
+  currentRank: string;  // 当前头衔
+  playTime: number;     // 游戏时长（tick数）
+}
+
+export interface SaveData {
+  map: Tile[][];
+  mapSize: number;
+  resources: Resources;
+  totalResourcesProduced: Partial<Record<keyof Resources, number>>;
+  population: number;
+  maxPopulation: number;
+  happiness: number;
+  gameSpeed: number;
+  cameraX: number;
+  cameraY: number;
+  zoom: number;
+  currentRank: string;
+  highestPopulation: number;
+  peakPopulation: number;
+  tickCount: number;
+  notifications: GameNotification[];
+  activeEvents: GameEvent[];
+  lastEventTick: number;
+  lastTradeTick: number;
+  pedestrians: Pedestrian[];
+  currentSeason: Season;
+  daysInSeason: number;
+  year: number;
+  unlockedBuildings: BuildingType[];
+  researchedTechs: TechType[];
+  currentResearch: TechType | null;
+  researchProgress: number;
+  eventForecasts: EventForecast[];
+  lastForecastTick: number;
+  achievements: Achievement[];
+  unlockedAchievements: string[];
+  neighborCities: NeighborCity[];
+  buildingsDestroyed: number;
+  disastersSurvived: number;
 }
