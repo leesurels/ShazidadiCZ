@@ -720,10 +720,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   deleteSlot: (slotId: number) => {
     const slotKey = `${SAVE_KEY_PREFIX}${slotId}`;
     localStorage.removeItem(slotKey);
-    // 如果删除的是当前存档位，重置状态
+    // 重置当前存档位状态
     if (get().currentSaveSlot === slotId) {
       set({ currentSaveSlot: null });
     }
+    // 触发状态更新，确保UI能刷新
+    set({ showStartScreen: true });
   },
 
   startNewGame: (slotId?: number) => {
@@ -748,78 +750,83 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const slotKey = `${SAVE_KEY_PREFIX}${slotId}`;
     try {
       const saved = localStorage.getItem(slotKey);
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data.mapSize !== MAP_SIZE) {
-          console.error('存档地图大小不匹配');
-          return false;
-        }
-        // 移除内部元数据
-        const { _meta, ...gameData } = data;
-        
-        gameData.showStartScreen = false;
-        gameData.showStatsPanel = false;
-        gameData.showBuildingInfo = false;
-        gameData.showTechPanel = false;
-        gameData.showEventForecast = false;
-        gameData.showAchievementPanel = false;
-        gameData.showTraderPanel = false;
-        gameData.victoryNotification = null;
-        gameData.isRunning = true;
-        gameData.currentSaveSlot = slotId;
-        
-        // Ensure defaults for new fields
-        if (!gameData.notifications) gameData.notifications = [];
-        if (!gameData.activeEvents) gameData.activeEvents = [];
-        if (!gameData.lastEventTick) gameData.lastEventTick = -100;
-        if (!gameData.pedestrians) gameData.pedestrians = [];
-        if (!gameData.workersNeeded) gameData.workersNeeded = 0;
-        if (!gameData.workersAvailable) gameData.workersAvailable = 0;
-        if (!gameData.storageCapacity) gameData.storageCapacity = BASE_STORAGE;
-        if (!gameData.lastTradeTick) gameData.lastTradeTick = -100;
-        if (!gameData.showMarketTrade) gameData.showMarketTrade = false;
-        // Season system
-        if (!gameData.currentSeason) gameData.currentSeason = Season.SPRING;
-        if (!gameData.daysInSeason) gameData.daysInSeason = 0;
-        if (!gameData.year) gameData.year = 1;
-        // Tech system
-        if (!gameData.unlockedBuildings) gameData.unlockedBuildings = [...INITIAL_UNLOCKED_BUILDINGS];
-        if (!gameData.researchedTechs) gameData.researchedTechs = [];
-        if (!gameData.currentResearch) gameData.currentResearch = null;
-        if (!gameData.researchProgress) gameData.researchProgress = 0;
-        // Event forecast
-        if (!gameData.eventForecasts) gameData.eventForecasts = [];
-        if (!gameData.lastForecastTick) gameData.lastForecastTick = -100;
-        // Resources expansion
-        if (gameData.resources.wheat === undefined) gameData.resources.wheat = 0;
-        if (gameData.resources.flour === undefined) gameData.resources.flour = 0;
-        if (gameData.resources.bread === undefined) gameData.resources.bread = 0;
-        if (gameData.resources.clay === undefined) gameData.resources.clay = 0;
-        if (gameData.resources.iron === undefined) gameData.resources.iron = 0;
-        if (gameData.resources.tools === undefined) gameData.resources.tools = 0;
-        // Achievements
-        if (!gameData.achievements) gameData.achievements = ACHIEVEMENT_DEFS.map(a => ({ ...a }));
-        if (!gameData.unlockedAchievements) gameData.unlockedAchievements = [];
-        // Neighbor cities
-        if (!gameData.neighborCities) gameData.neighborCities = NEIGHBOR_CITIES.map(c => ({ ...c }));
-        // Stats
-        if (!gameData.buildingsDestroyed) gameData.buildingsDestroyed = 0;
-        if (!gameData.disastersSurvived) gameData.disastersSurvived = 0;
-        if (!gameData.peakPopulation) gameData.peakPopulation = gameData.population || 0;
-        if (!gameData.totalResourcesProduced) gameData.totalResourcesProduced = {};
-        // Ensure houseLevel exists
-        if (gameData.map) {
-          for (let y = 0; y < MAP_SIZE; y++) {
-            for (let x = 0; x < MAP_SIZE; x++) {
-              if (gameData.map[y][x].houseLevel === undefined) {
-                gameData.map[y][x].houseLevel = 0;
-              }
+      if (!saved) {
+        console.error('存档不存在:', slotKey);
+        return false;
+      }
+      const data = JSON.parse(saved);
+      if (data.mapSize !== MAP_SIZE) {
+        console.error('存档地图大小不匹配');
+        return false;
+      }
+      // 移除内部元数据
+      const { _meta, ...gameData } = data;
+      
+      // 确保所有UI状态正确设置
+      gameData.showStartScreen = false;
+      gameData.showStatsPanel = false;
+      gameData.showBuildingInfo = false;
+      gameData.showMarketTrade = false;
+      gameData.showTechPanel = false;
+      gameData.showEventForecast = false;
+      gameData.showAchievementPanel = false;
+      gameData.showTraderPanel = false;
+      gameData.victoryNotification = null;
+      gameData.isRunning = true;
+      gameData.currentSaveSlot = slotId;
+      
+      // Ensure defaults for new fields
+      if (!gameData.notifications) gameData.notifications = [];
+      if (!gameData.activeEvents) gameData.activeEvents = [];
+      if (!gameData.lastEventTick) gameData.lastEventTick = -100;
+      if (!gameData.pedestrians) gameData.pedestrians = [];
+      if (!gameData.workersNeeded) gameData.workersNeeded = 0;
+      if (!gameData.workersAvailable) gameData.workersAvailable = 0;
+      if (!gameData.storageCapacity) gameData.storageCapacity = BASE_STORAGE;
+      if (!gameData.lastTradeTick) gameData.lastTradeTick = -100;
+      if (!gameData.showMarketTrade) gameData.showMarketTrade = false;
+      // Season system
+      if (!gameData.currentSeason) gameData.currentSeason = Season.SPRING;
+      if (!gameData.daysInSeason) gameData.daysInSeason = 0;
+      if (!gameData.year) gameData.year = 1;
+      // Tech system
+      if (!gameData.unlockedBuildings) gameData.unlockedBuildings = [...INITIAL_UNLOCKED_BUILDINGS];
+      if (!gameData.researchedTechs) gameData.researchedTechs = [];
+      if (!gameData.currentResearch) gameData.currentResearch = null;
+      if (!gameData.researchProgress) gameData.researchProgress = 0;
+      // Event forecast
+      if (!gameData.eventForecasts) gameData.eventForecasts = [];
+      if (!gameData.lastForecastTick) gameData.lastForecastTick = -100;
+      // Resources expansion
+      if (gameData.resources.wheat === undefined) gameData.resources.wheat = 0;
+      if (gameData.resources.flour === undefined) gameData.resources.flour = 0;
+      if (gameData.resources.bread === undefined) gameData.resources.bread = 0;
+      if (gameData.resources.clay === undefined) gameData.resources.clay = 0;
+      if (gameData.resources.iron === undefined) gameData.resources.iron = 0;
+      if (gameData.resources.tools === undefined) gameData.resources.tools = 0;
+      // Achievements
+      if (!gameData.achievements) gameData.achievements = ACHIEVEMENT_DEFS.map(a => ({ ...a }));
+      if (!gameData.unlockedAchievements) gameData.unlockedAchievements = [];
+      // Neighbor cities
+      if (!gameData.neighborCities) gameData.neighborCities = NEIGHBOR_CITIES.map(c => ({ ...c }));
+      // Stats
+      if (!gameData.buildingsDestroyed) gameData.buildingsDestroyed = 0;
+      if (!gameData.disastersSurvived) gameData.disastersSurvived = 0;
+      if (!gameData.peakPopulation) gameData.peakPopulation = gameData.population || 0;
+      if (!gameData.totalResourcesProduced) gameData.totalResourcesProduced = {};
+      // Ensure houseLevel exists
+      if (gameData.map) {
+        for (let y = 0; y < MAP_SIZE; y++) {
+          for (let x = 0; x < MAP_SIZE; x++) {
+            if (gameData.map[y][x].houseLevel === undefined) {
+              gameData.map[y][x].houseLevel = 0;
             }
           }
         }
-        set(gameData);
-        return true;
       }
+      // 更新状态，确保主界面关闭
+      set(gameData);
+      return true;
     } catch (e) {
       console.error('Failed to load game from slot:', e);
     }
