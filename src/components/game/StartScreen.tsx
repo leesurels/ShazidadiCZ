@@ -203,7 +203,6 @@ function SaveSlotCard({
           </div>
           <button
             onClick={() => {
-              setShowConfirm(false);
               onDelete();
             }}
             className="text-xs transition-colors active:scale-95"
@@ -239,11 +238,14 @@ export default function StartScreen() {
   const handleLoad = (slotId: number) => {
     const success = loadFromSlot(slotId);
     if (!success) {
-      alert('加载存档失败！');
+      alert('加载存档失败！存档可能已损坏。');
     }
+    // 无论成功与否，都关闭主界面（如果loadFromSlot返回true，游戏已加载）
+    // 如果返回false，用户已经看到错误提示
   };
 
   const handleDelete = (slotId: number) => {
+    // 直接关闭卡片内模态框并显示全局确认对话框
     setDeleteConfirm(slotId);
   };
 
