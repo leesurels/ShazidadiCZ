@@ -50,11 +50,11 @@ export default function BuildBar() {
   };
   
   // Get unlock requirements for toast message
-  const getUnlockRequirements = (type: BuildingType): { tech?: string; population?: number } => {
+  const getUnlockRequirements = (type: BuildingType): { tech?: string; population?: number; building?: string } => {
     const req = BUILDING_UNLOCKS[type];
     if (!req) return { population: 50 };
     
-    const result: { tech?: string; population?: number } = {};
+    const result: { tech?: string; population?: number; building?: string } = {};
     
     if (req.tech) {
       const techDef = TECH_DEFS[req.tech];
@@ -67,6 +67,13 @@ export default function BuildBar() {
       result.population = req.population;
     }
     
+    if (req.building) {
+      const buildingDef = BUILDING_DEFS[req.building];
+      if (buildingDef) {
+        result.building = buildingDef.name;
+      }
+    }
+    
     return result;
   };
 
@@ -76,7 +83,11 @@ export default function BuildBar() {
     const reqs = getUnlockRequirements(type);
     
     let message = '';
-    if (reqs.tech && reqs.population) {
+    if (reqs.building && reqs.population) {
+      message = `需要先解锁「${reqs.building}」并人口达到 ${reqs.population} 才能解锁「${def.name}」`;
+    } else if (reqs.building) {
+      message = `需要先解锁「${reqs.building}」才能解锁「${def.name}」`;
+    } else if (reqs.tech && reqs.population) {
       message = `需要研究「${reqs.tech}」并人口达到 ${reqs.population} 才能解锁「${def.name}」`;
     } else if (reqs.population) {
       message = `需要人口达到 ${reqs.population} 才能解锁「${def.name}」`;
@@ -86,7 +97,7 @@ export default function BuildBar() {
       message = `需要人口达到 50 才能解锁「${def.name}」`;
     }
     
-    toast.info(`🔒 ${def.name} 未解锁`, {
+    toast(`🔒 ${def.name} 未解锁`, {
       description: message,
       duration: 3000,
       style: {

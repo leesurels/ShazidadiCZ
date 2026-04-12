@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/game/store';
 import { TECH_DEFS, BUILDING_DEFS } from '@/game/constants';
-import { TechType } from '@/game/types';
+import { TechType, type Resources } from '@/game/types';
 
 export default function TechPanel() {
   const {
@@ -15,11 +15,49 @@ export default function TechPanel() {
     startResearch,
     unlockedBuildings,
     population,
+    resources,
   } = useGameStore();
 
   if (!showTechPanel) return null;
 
   const techs = Object.values(TECH_DEFS);
+
+  // 资源显示映射
+  const resourceLabels: Record<string, { label: string; emoji: string }> = {
+    gold: { label: '金币', emoji: '🪙' },
+    wood: { label: '木材', emoji: '🪵' },
+    stone: { label: '石材', emoji: '🪨' },
+    food: { label: '食物', emoji: '🍖' },
+    pottery: { label: '陶器', emoji: '🏺' },
+    wheat: { label: '小麦', emoji: '🌾' },
+    flour: { label: '面粉', emoji: '🌾' },
+    clay: { label: '粘土', emoji: '🏺' },
+    iron: { label: '铁矿', emoji: '⚒️' },
+    tools: { label: '工具', emoji: '🔧' },
+  };
+
+  // 检查资源是否足够
+  const canAffordTech = (tech: typeof TECH_DEFS[keyof typeof TECH_DEFS]) => {
+    for (const [resource, amount] of Object.entries(tech.cost)) {
+      if ((resources[resource as keyof Resources] || 0) < amount) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // 获取缺少的资源
+  const getMissingResources = (tech: typeof TECH_DEFS[keyof typeof TECH_DEFS]) => {
+    const missing: string[] = [];
+    for (const [resource, amount] of Object.entries(tech.cost)) {
+      const current = resources[resource as keyof Resources] || 0;
+      if (current < amount) {
+        const info = resourceLabels[resource];
+        missing.push(`${info?.emoji || ''}${info?.label || resource}: ${current}/${amount}`);
+      }
+    }
+    return missing;
+  };
 
   return (
     <div 
@@ -68,17 +106,17 @@ export default function TechPanel() {
               <div 
                 className="h-full rounded-full transition-all"
                 style={{ 
-                  width: `${Math.min(100, (researchProgress / TECH_DEFS[currentResearch].researchCost) * 100)}%`,
+                  width: `${Math.min(100, (researchProgress / TECH_DEFS[currentResearch].duration) * 100)}%`,
                   background: 'linear-gradient(to right, #4169E1, #6495ED)',
                 }}
               />
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-[10px]" style={{ color: '#666' }}>
-                进度: {Math.floor(researchProgress)}/{TECH_DEFS[currentResearch].researchCost}
+                进度: {Math.floor(researchProgress)}/{TECH_DEFS[currentResearch].duration}天
               </span>
               <span className="text-[10px]" style={{ color: '#666' }}>
-                {Math.floor((researchProgress / TECH_DEFS[currentResearch].researchCost) * 100)}%
+                {Math.floor((researchProgress / TECH_DEFS[currentResearch].duration) * 100)}%
               </span>
             </div>
           </div>
@@ -90,8 +128,10 @@ export default function TechPanel() {
             {techs.map(tech => {
               const isResearched = researchedTechs.includes(tech.id);
               const isResearching = currentResearch === tech.id;
-              const canResearch = !isResearched && !currentResearch && !isResearching;
-              const progress = isResearching ? (researchProgress / tech.researchCost) * 100 : 0;
+              const affordable = canAffordTech(tech);
+              const canResearch = !isResearched && !currentResearch && !isResearching && affordable;
+              const progress = isResearching ? (researchProgress / tech.duration) * 100 : 0;
+              const missingResources = !isResearched && !isResearching ? getMissingResources(tech) : [];
 
               // Get unlocked buildings from this tech
               const unlockedFromTech: string[] = [];
@@ -148,7 +188,7 @@ export default function TechPanel() {
                           cursor: canResearch ? 'pointer' : 'not-allowed',
                         }}
                       >
-                        {currentResearch ? '研究中...' : '研究'}
+                        {!affordable && currentResearch ? '资源不足' : currentResearch ? '研究中...' : '研究'}
                       </button>
                     )}
                   </div>
@@ -177,12 +217,36 @@ export default function TechPanel() {
                     </div>
                   )}
 
-                  {/* Cost */}
+                  {/* Cost display */}
                   {!isResearched && (
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className="text-[10px]" style={{ color: '#666' }}>
-                        研究周期: {tech.researchCost}天
+                        研究周期: {tech.duration}天
                       </span>
+                      <span className="text-[10px]" style={{ color: '#888' }}>|</span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {Object.entries(tech.cost).map(([resource, amount]) => {
+                          const info = resourceLabels[resource];
+                          const hasEnough = (resources[resource as keyof Resources] || 0) >= amount;
+                          return (
+                            <span 
+                              key={resource} 
+                              className="text-[10px] px-1 py-0.5 rounded"
+                              style={{ 
+                                background: hasEnough ? 'rgba(65,105,225,0.1)' : 'rgba(255,0,0,0.1)',
+                                color: hasEnough ? '#6495ED' : '#FF6B6B',
+                              }}
+                            >
+                              {info?.emoji || ''}{amount}
+                            </span>
+                          );
+                        })}
+                      </div>
+                      {missingResources.length > 0 && (
+                        <div className="w-full text-[10px]" style={{ color: '#FF6B6B' }}>
+                          缺少: {missingResources.join(', ')}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

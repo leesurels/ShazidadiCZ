@@ -720,6 +720,242 @@ export class Renderer {
         ctx.fill();
         break;
       }
+      case BuildingType.MILL: {
+        // Windmill - tall round tower with rotating blades
+        // Base tower
+        ctx.fillStyle = '#D2B48C';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw * 0.3, sy + th - 4);
+        ctx.lineTo(sx + tw * 0.35, sy + th * 0.3);
+        ctx.lineTo(sx + tw * 0.65, sy + th * 0.3);
+        ctx.lineTo(sx + tw * 0.7, sy + th - 4);
+        ctx.closePath();
+        ctx.fill();
+        // Conical roof
+        ctx.fillStyle = '#8B7355';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw * 0.35, sy + th * 0.3);
+        ctx.lineTo(cx, sy + th * 0.1);
+        ctx.lineTo(sx + tw * 0.65, sy + th * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        // Windmill blades (animated)
+        const bladeAngle = this.animTime * 1.5;
+        ctx.save();
+        ctx.translate(cx, sy + th * 0.35);
+        ctx.rotate(bladeAngle);
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+          ctx.save();
+          ctx.rotate((i * Math.PI) / 2);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -12);
+          ctx.lineTo(3, -14);
+          ctx.lineTo(0, -18);
+          ctx.lineTo(-3, -14);
+          ctx.lineTo(0, -12);
+          ctx.closePath();
+          ctx.fillStyle = '#8B7355';
+          ctx.fill();
+          ctx.restore();
+        }
+        // Center hub
+        ctx.fillStyle = '#4a3520';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // Door
+        ctx.fillStyle = '#654321';
+        ctx.fillRect(cx - 3, sy + th - 10, 6, 8);
+        break;
+      }
+      case BuildingType.BAKERY: {
+        // Bakery - cozy cottage with smoking chimney
+        ctx.fillStyle = '#DEB887';
+        ctx.fillRect(sx + 4, sy + 8, tw - 8, th - 12);
+        // Roof (triangular)
+        ctx.fillStyle = '#CD853F';
+        ctx.beginPath();
+        ctx.moveTo(sx + 2, sy + 10);
+        ctx.lineTo(cx, sy + 2);
+        ctx.lineTo(sx + tw - 2, sy + 10);
+        ctx.closePath();
+        ctx.fill();
+        // Chimney with smoke
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(sx + tw - 14, sy + 2, 6, 10);
+        // Animated smoke
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        const smokeOffset = Math.sin(this.animTime * 2) * 2;
+        ctx.beginPath();
+        ctx.arc(sx + tw - 11 + smokeOffset, sy - 2, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(sx + tw - 13 + smokeOffset * 1.5, sy - 7, 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Door
+        ctx.fillStyle = '#654321';
+        ctx.fillRect(cx - 3, sy + th - 12, 6, 10);
+        // Window
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(sx + 8, sy + 14, 6, 5);
+        // Bread loaf decoration
+        ctx.fillStyle = '#D2691E';
+        ctx.beginPath();
+        ctx.ellipse(sx + tw - 10, sy + th - 6, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case BuildingType.CLAY_PIT: {
+        // Clay pit - excavated earth pit with clay deposits
+        // Outer earth
+        ctx.fillStyle = '#6B4423';
+        ctx.fillRect(sx + 2, sy + 2, tw - 4, th - 4);
+        // Inner pit (excavated area)
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, tw * 0.35, th * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Clay deposits (brownish lumps)
+        ctx.fillStyle = '#A0522D';
+        ctx.beginPath();
+        ctx.ellipse(cx - 6, cy, 4, 3, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 5, cy + 2, 5, 3, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 4, 3, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Shovel sticking out
+        ctx.fillStyle = '#708090';
+        ctx.fillRect(sx + tw - 10, sy + 4, 3, 12);
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw - 12, sy + 4);
+        ctx.lineTo(sx + tw - 7, sy + 4);
+        ctx.lineTo(sx + tw - 9, sy + 8);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+      case BuildingType.UNIVERSITY: {
+        // University - grand building with dome and columns
+        // Main building
+        ctx.fillStyle = '#4169E1';
+        ctx.fillRect(sx + 4, sy + 10, tw - 8, th - 14);
+        // Columns
+        ctx.fillStyle = '#F5F5F5';
+        for (let i = 0; i < 5; i++) {
+          const colX = sx + 8 + i * ((tw - 16) / 4);
+          ctx.fillRect(colX, sy + 12, 3, th - 20);
+        }
+        // Pediment (triangle roof)
+        ctx.fillStyle = '#191970';
+        ctx.beginPath();
+        ctx.moveTo(sx + 2, sy + 12);
+        ctx.lineTo(cx, sy + 2);
+        ctx.lineTo(sx + tw - 2, sy + 12);
+        ctx.closePath();
+        ctx.fill();
+        // Central dome
+        ctx.fillStyle = '#4169E1';
+        ctx.beginPath();
+        ctx.arc(cx, sy + 8, 6, Math.PI, 0);
+        ctx.fill();
+        // Door
+        ctx.fillStyle = '#4a3728';
+        ctx.fillRect(cx - 4, sy + th - 12, 8, 10);
+        // Books decoration
+        ctx.fillStyle = '#8B0000';
+        ctx.fillRect(sx + 6, sy + th - 6, tw - 12, 3);
+        // Graduation cap symbol
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 10px serif';
+        ctx.fillText('🎓', cx - 5, sy + 20);
+        break;
+      }
+      case BuildingType.IRON_MINE: {
+        // Iron mine - mountain entrance with minecart
+        // Mountain backdrop
+        ctx.fillStyle = '#556B2F';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy + th);
+        ctx.lineTo(cx, sy + 4);
+        ctx.lineTo(sx + tw, sy + th);
+        ctx.closePath();
+        ctx.fill();
+        // Dark entrance
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.moveTo(cx - 8, sy + th - 4);
+        ctx.lineTo(cx - 10, sy + th - 14);
+        ctx.lineTo(cx + 10, sy + th - 14);
+        ctx.lineTo(cx + 8, sy + th - 4);
+        ctx.closePath();
+        ctx.fill();
+        // Entrance frame
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(cx - 11, sy + th - 14, 3, 12);
+        ctx.fillRect(cx + 8, sy + th - 14, 3, 12);
+        ctx.fillRect(cx - 12, sy + th - 16, 24, 4);
+        // Mine track
+        ctx.strokeStyle = '#4a4a4a';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, sy + th - 4);
+        ctx.lineTo(cx, sy + th - 12);
+        ctx.lineTo(cx + 5, sy + th - 4);
+        ctx.stroke();
+        // Pickaxe symbol
+        ctx.fillStyle = '#708090';
+        ctx.font = '12px serif';
+        ctx.fillText('⛏️', cx - 6, sy + th - 20);
+        break;
+      }
+      case BuildingType.BLACKSMITH: {
+        // Blacksmith - workshop with anvil and fire
+        // Main building
+        ctx.fillStyle = '#708090';
+        ctx.fillRect(sx + 4, sy + 8, tw - 8, th - 12);
+        // Roof
+        ctx.fillStyle = '#2F4F4F';
+        ctx.fillRect(sx + 2, sy + 4, tw - 4, 6);
+        // Chimney
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(sx + tw - 12, sy + 1, 6, 8);
+        // Fire glow (animated)
+        const fireIntensity = 0.6 + Math.sin(this.animTime * 8) * 0.2;
+        ctx.fillStyle = `rgba(255, 100, 0, ${fireIntensity})`;
+        ctx.beginPath();
+        ctx.arc(sx + tw - 9, sy + 4, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255, 200, 0, ${fireIntensity * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(sx + tw - 9, sy + 5, 2, 0, Math.PI * 2);
+        ctx.fill();
+        // Door
+        ctx.fillStyle = '#4a3728';
+        ctx.fillRect(cx - 3, sy + th - 10, 6, 8);
+        // Anvil
+        ctx.fillStyle = '#2F2F2F';
+        ctx.fillRect(sx + 6, sy + th - 8, 8, 4);
+        ctx.fillStyle = '#3a3a3a';
+        ctx.fillRect(sx + 5, sy + th - 10, 10, 3);
+        // Hammer
+        ctx.fillStyle = '#708090';
+        ctx.save();
+        ctx.translate(sx + 10, sy + th - 12);
+        ctx.rotate(Math.sin(this.animTime * 4) * 0.3);
+        ctx.fillRect(-2, -6, 4, 8);
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(-1, 2, 2, 5);
+        ctx.restore();
+        break;
+      }
     }
   }
 

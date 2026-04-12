@@ -19,6 +19,7 @@ import EventForecastPanel from '@/components/game/EventForecastPanel';
 import AchievementPanel from '@/components/game/AchievementPanel';
 import TraderPanel from '@/components/game/TraderPanel';
 import { useGameStore } from '@/game/store';
+import MiniMap from '@/components/game/MiniMap';
 
 export default function Home() {
   const showStartScreen = useGameStore(s => s.showStartScreen);
@@ -49,6 +50,9 @@ export default function Home() {
 
       {/* Game Canvas */}
       <GameCanvas />
+      
+      {/* Mini Map */}
+      <MiniMap />
 
       {/* Building Bar */}
       <BuildBar />

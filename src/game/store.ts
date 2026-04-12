@@ -1055,10 +1055,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // ===== 科技系统 =====
   startResearch: (techType) => {
-    const state = get();
-    if (state.currentResearch) return; // Already researching
-    if (state.researchedTechs.includes(techType)) return; // Already researched
-    set({ currentResearch: techType, researchProgress: 0 });
+    const { resources, currentResearch, researchedTechs } = get();
+    
+    // 检查是否已在研究
+    if (currentResearch) return;
+    
+    // 检查是否已研究
+    if (researchedTechs.includes(techType)) return;
+    
+    const techDef = TECH_DEFS[techType];
+    
+    // 检查资源是否足够
+    for (const [resource, amount] of Object.entries(techDef.cost)) {
+      if ((resources[resource as keyof Resources] || 0) < amount) {
+        return; // 资源不足
+      }
+    }
+    
+    // 扣除资源
+    const newResources = { ...resources };
+    for (const [resource, amount] of Object.entries(techDef.cost)) {
+      newResources[resource as keyof Resources] = (newResources[resource as keyof Resources] || 0) - amount;
+    }
+    
+    set({
+      resources: newResources,
+      currentResearch: techType,
+      researchProgress: 0,
+    });
   },
 
   checkTechCompletion: () => {
@@ -1073,7 +1097,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const newProgress = state.researchProgress + researchSpeed;
 
-    if (newProgress >= tech.researchCost) {
+    if (newProgress >= tech.duration) {
       // Tech completed!
       const newResearchedTechs = [...state.researchedTechs, state.currentResearch];
       const techDef = TECH_DEFS[state.currentResearch];
@@ -1816,7 +1840,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     for (const [buildingType, unlockReq] of Object.entries(BUILDING_UNLOCKS)) {
       if (!newUnlockedBuildings.includes(buildingType as BuildingType)) {
         if (unlockReq.population && newPopulation >= unlockReq.population) {
-          if (!unlockReq.tech || newUnlockedBuildings.includes(BuildingType.POTTERY_WORKSHOP)) {
+          // Check tech requirement
+          const techOk = !unlockReq.tech || state.researchedTechs.includes(unlockReq.tech);
+          // Check building requirement (requires building to be unlocked first)
+          const buildingOk = !unlockReq.building || newUnlockedBuildings.includes(unlockReq.building);
+          if (techOk && buildingOk) {
             newUnlockedBuildings.push(buildingType as BuildingType);
             // Add notification
             const def = BUILDING_DEFS[buildingType];

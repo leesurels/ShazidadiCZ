@@ -107,9 +107,8 @@ export interface Tech {
   name: string;
   description: string;
   emoji: string;
-  researchCost: number; // 研究所需tick数
-  researchProgress: number; // 当前研究进度
-  isResearched: boolean;
+  cost: Partial<Resources>;  // 研究消耗的资源
+  duration: number;  // 研究时长（tick数）
   effects: TechEffect[];
 }
 

@@ -80,9 +80,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '制陶工艺',
     description: '提升陶器工坊产出50%',
     emoji: '🏺',
-    researchCost: 50,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 100, wood: 20 },
+    duration: 30,
     effects: [{ type: 'production_bonus', value: 1.5, building: BuildingType.POTTERY_WORKSHOP }],
   },
   [TechType.IRON_WORKING]: {
@@ -90,9 +89,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '炼铁术',
     description: '解锁铁矿和铁匠铺',
     emoji: '⚒️',
-    researchCost: 80,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 200, stone: 50 },
+    duration: 50,
     effects: [{ type: 'unlock_building', value: 1, building: BuildingType.IRON_MINE }],
   },
   [TechType.ADVANCED_FARMING]: {
@@ -100,9 +98,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '先进农业',
     description: '农场产出+30%，磨坊效率+20%',
     emoji: '🌾',
-    researchCost: 60,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 150, wood: 30 },
+    duration: 40,
     effects: [
       { type: 'production_bonus', value: 1.3, building: BuildingType.FARM },
       { type: 'production_bonus', value: 1.2, building: BuildingType.MILL },
@@ -113,9 +110,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '道路工程',
     description: '道路建设成本-30%，增加道路吸引力',
     emoji: '🛤️',
-    researchCost: 40,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 80, stone: 40 },
+    duration: 25,
     effects: [{ type: 'cost_reduction', value: 0.7, building: BuildingType.ROAD }],
   },
   [TechType.WATER_MANAGEMENT]: {
@@ -123,9 +119,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '水利工程',
     description: '水井范围+2，所有建筑舒适度+5',
     emoji: '💧',
-    researchCost: 50,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 120, stone: 30 },
+    duration: 35,
     effects: [{ type: 'happiness_bonus', value: 5 }],
   },
   [TechType.TRADE_NETWORK]: {
@@ -133,9 +128,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '贸易网络',
     description: '市场税收+50%，解锁邻城外交',
     emoji: '🤝',
-    researchCost: 70,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 200 },
+    duration: 45,
     effects: [{ type: 'production_bonus', value: 1.5, building: BuildingType.MARKET }],
   },
   [TechType.MILITARY_TACTICS]: {
@@ -143,9 +137,8 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '军事战术',
     description: '警卫塔防御效果翻倍，蛮族入侵概率-30%',
     emoji: '⚔️',
-    researchCost: 90,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 250, stone: 50 },
+    duration: 55,
     effects: [{ type: 'happiness_bonus', value: 10, building: BuildingType.GUARD_TOWER }],
   },
   [TechType.RELIGIOUS_STUDIES]: {
@@ -153,25 +146,26 @@ export const TECH_DEFS: Record<TechType, Tech> = {
     name: '宗教研究',
     description: '神庙幸福度+100%，研究速度+25%',
     emoji: '🏛️',
-    researchCost: 80,
-    researchProgress: 0,
-    isResearched: false,
+    cost: { gold: 150, wood: 30 },
+    duration: 40,
     effects: [{ type: 'happiness_bonus', value: 10, building: BuildingType.TEMPLE }],
   },
 };
 
 // ===== 建筑解锁条件 =====
 export const BUILDING_UNLOCKS: Record<BuildingType, { population?: number; tech?: TechType; building?: BuildingType }> = {
-  [BuildingType.POTTERY_WORKSHOP]: { population: 50 },
   [BuildingType.MARKET]: { population: 50 },
   [BuildingType.TEMPLE]: { population: 150 },
-  [BuildingType.TAX_OFFICE]: { population: 150 },
-  [BuildingType.FIRE_STATION]: { population: 150 },
   [BuildingType.GUARD_TOWER]: { population: 150 },
   [BuildingType.UNIVERSITY]: { population: 500 },
   [BuildingType.MILL]: { population: 80 },
   [BuildingType.BAKERY]: { population: 100 },
-  [BuildingType.CLAY_PIT]: { population: 60 },
+  // 粘土矿和陶器工坊 - 新的解锁链
+  [BuildingType.CLAY_PIT]: { population: 30 },
+  [BuildingType.POTTERY_WORKSHOP]: { population: 50, building: BuildingType.CLAY_PIT },
+  // 降低解锁条件的建筑
+  [BuildingType.FIRE_STATION]: { population: 100 },
+  [BuildingType.TAX_OFFICE]: { population: 80 },
   [BuildingType.IRON_MINE]: { population: 200, tech: TechType.IRON_WORKING },
   [BuildingType.BLACKSMITH]: { population: 250, tech: TechType.IRON_WORKING },
   // 前期食物建筑
@@ -359,7 +353,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     cost: { gold: 30, wood: 4, stone: 6 },
     color: '#DEB887',
     roofColor: '#CD853F',
-    production: { bread: 1, food: 2 },
+    production: { bread: 1, food: 8 },
     consumption: { flour: 1 },
     productionChain: {
       input: { resource: 'flour', amount: 1 },
@@ -376,6 +370,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     color: '#8B4513',
     roofColor: '#654321',
     production: { clay: 2 },
+    needsNearbyTerrain: { type: TerrainType.WATER, range: 2 },
     workersNeeded: 3,
   },
   [BuildingType.IRON_MINE]: {
@@ -386,6 +381,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     color: '#556B2F',
     roofColor: '#2F4F4F',
     production: { iron: 1 },
+    needsNearbyTerrain: { type: TerrainType.MOUNTAIN, range: 2 },
     workersNeeded: 4,
     unlockCondition: { population: 200, tech: TechType.IRON_WORKING },
   },
@@ -455,16 +451,19 @@ export const BUILD_ORDER: BuildingType[] = [
   BuildingType.MARKET,
   BuildingType.LUMBER_MILL,
   BuildingType.QUARRY,
+  // 产业链建筑 - 粘土链（粘土矿必须在陶器工坊之前）
+  BuildingType.CLAY_PIT,
   BuildingType.POTTERY_WORKSHOP,
+  // 产业链建筑 - 食物加工链
+  BuildingType.MILL,
+  BuildingType.BAKERY,
+  // 其他建筑
   BuildingType.TAX_OFFICE,
   BuildingType.TEMPLE,
   BuildingType.GARDEN,
   BuildingType.GUARD_TOWER,
   BuildingType.FIRE_STATION,
-  // 产业链建筑
-  BuildingType.MILL,
-  BuildingType.BAKERY,
-  BuildingType.CLAY_PIT,
+  // 工业建筑
   BuildingType.IRON_MINE,
   BuildingType.BLACKSMITH,
   BuildingType.UNIVERSITY,
