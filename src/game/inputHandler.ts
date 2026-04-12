@@ -1,8 +1,8 @@
 // ===== 傻子大帝 - Input Handler (Touch & Mouse) =====
 import { Renderer } from './renderer';
 import { useGameStore } from './store';
-import { BuildingType } from './types';
-import { TAP_THRESHOLD, LONG_PRESS_DURATION, MIN_ZOOM, MAX_ZOOM } from './constants';
+import { BuildingType, TerrainType } from './types';
+import { TAP_THRESHOLD, LONG_PRESS_DURATION, MIN_ZOOM, MAX_ZOOM, BUILDING_DEFS } from './constants';
 
 export class InputHandler {
   private renderer: Renderer;
@@ -252,6 +252,13 @@ export class InputHandler {
       const success = state.placeBuilding(tile.x, tile.y);
       if (success) {
         // Keep building selected for rapid placement
+      } else {
+        // Show failure reason to user
+        const def = BUILDING_DEFS[state.selectedBuilding];
+        if (def?.needsNearbyTerrain) {
+          const terrainName = def.needsNearbyTerrain.type === TerrainType.WATER ? '水域' : '森林';
+          console.log(`⚠️ ${def.name} 需要建造在${terrainName}旁边${def.needsNearbyTerrain.range}格范围内`);
+        }
       }
       return;
     }

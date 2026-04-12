@@ -622,6 +622,72 @@ export class Renderer {
         ctx.restore();
         break;
       }
+      case BuildingType.HUNTER_HUT: {
+        // Small wooden hut with bow decoration
+        ctx.fillStyle = '#8B4513'; // brown wood
+        ctx.fillRect(sx + 5, sy + 8, tw - 10, th - 12);
+        // Roof (triangular)
+        ctx.fillStyle = '#654321'; // dark brown roof
+        ctx.beginPath();
+        ctx.moveTo(sx + 3, sy + 10);
+        ctx.lineTo(cx, sy + 2);
+        ctx.lineTo(sx + tw - 3, sy + 10);
+        ctx.closePath();
+        ctx.fill();
+        // Door
+        ctx.fillStyle = '#4a3520';
+        ctx.fillRect(cx - 3, sy + th - 12, 6, 8);
+        // Bow decoration (hanging on wall)
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(sx + 10, sy + 18, 4, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx + 10, sy + 14);
+        ctx.lineTo(sx + 10, sy + 22);
+        ctx.stroke();
+        // Small game hanging (meat)
+        ctx.fillStyle = '#8B0000';
+        ctx.beginPath(); ctx.arc(sx + tw - 12, sy + 15, 2, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      case BuildingType.FISHER_HUT: {
+        // Small hut with fishing net
+        ctx.fillStyle = '#4682B4'; // blue-gray wood
+        ctx.fillRect(sx + 5, sy + 8, tw - 10, th - 12);
+        // Roof
+        ctx.fillStyle = '#2F4F4F'; // dark slate
+        ctx.beginPath();
+        ctx.moveTo(sx + 3, sy + 10);
+        ctx.lineTo(cx, sy + 2);
+        ctx.lineTo(sx + tw - 3, sy + 10);
+        ctx.closePath();
+        ctx.fill();
+        // Door
+        ctx.fillStyle = '#3a6080';
+        ctx.fillRect(cx - 3, sy + th - 12, 6, 8);
+        // Fishing pole
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx + tw - 8, sy + 10);
+        ctx.lineTo(sx + tw - 3, sy + th - 18);
+        ctx.stroke();
+        // Fishing line
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(sx + tw - 3, sy + th - 18);
+        ctx.quadraticCurveTo(sx + tw - 8, sy + th - 14, sx + tw - 10, sy + th - 8);
+        ctx.stroke();
+        // Fish silhouette
+        ctx.fillStyle = '#87CEEB';
+        ctx.beginPath();
+        ctx.ellipse(sx + tw - 10, sy + th - 8, 3, 1.5, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
     }
   }
 

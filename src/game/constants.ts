@@ -422,7 +422,9 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     emoji: '🏹',
     cost: { gold: 12, wood: 3, stone: 0 },
     color: '#8B4513',
+    roofColor: '#654321',
     production: { food: 2 },
+    needsNearbyTerrain: { type: TerrainType.FOREST, range: 2 },
     workersNeeded: 2,
   },
   [BuildingType.FISHER_HUT]: {
