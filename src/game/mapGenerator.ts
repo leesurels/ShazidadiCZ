@@ -76,6 +76,15 @@ export function generateMap(seed?: number): Tile[][] {
   const desert2Radius = 3 + Math.floor(rand() * 3);
   createDesertArea(map, desert2X, desert2Y, desert2Radius, rand);
 
+  // Create 4-6 mountain patches
+  const mountainCount = 4 + Math.floor(rand() * 3);
+  for (let i = 0; i < mountainCount; i++) {
+    const mx = Math.floor(rand() * MAP_SIZE);
+    const my = Math.floor(rand() * MAP_SIZE);
+    const mRadius = 2 + Math.floor(rand() * 2);
+    createMountainPatch(map, mx, my, mRadius, rand);
+  }
+
   // Ensure a 6x6 grass starting area at top-left corner
   for (let dy = 0; dy < 6; dy++) {
     for (let dx = 0; dx < 6; dx++) {
@@ -130,6 +139,23 @@ function createDesertArea(map: Tile[][], cx: number, cy: number, radius: number,
         if (tx >= 0 && tx < MAP_SIZE && ty >= 0 && ty < MAP_SIZE) {
           if (map[ty][tx].terrain === TerrainType.GRASS) {
             map[ty][tx].terrain = TerrainType.DESERT;
+          }
+        }
+      }
+    }
+  }
+}
+
+function createMountainPatch(map: Tile[][], cx: number, cy: number, radius: number, rand: () => number) {
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= radius && rand() > 0.15) {
+        const tx = cx + dx;
+        const ty = cy + dy;
+        if (tx >= 0 && tx < MAP_SIZE && ty >= 0 && ty < MAP_SIZE) {
+          if (map[ty][tx].terrain === TerrainType.GRASS) {
+            map[ty][tx].terrain = TerrainType.MOUNTAIN;
           }
         }
       }

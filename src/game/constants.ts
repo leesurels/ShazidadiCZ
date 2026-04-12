@@ -256,6 +256,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     cost: { gold: 20, wood: 0, stone: 2 },
     color: '#228B22',
     production: { wood: 2 },
+    needsNearbyTerrain: { type: TerrainType.FOREST, range: 2 },
     workersNeeded: 2,
   },
   [BuildingType.QUARRY]: {
@@ -265,6 +266,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     cost: { gold: 20, wood: 2, stone: 0 },
     color: '#808080',
     production: { stone: 2 },
+    needsNearbyTerrain: { type: TerrainType.MOUNTAIN, range: 2 },
     workersNeeded: 3,
   },
   [BuildingType.POTTERY_WORKSHOP]: {
@@ -562,6 +564,7 @@ export const TERRAIN_COLORS = {
   water: '#3b7dd8',
   desert: '#c2a64e',
   forest: '#2d6b2e',
+  mountain: '#5a5a5a',  // 山体
 };
 
 // ===== 事件系统（扩展） =====

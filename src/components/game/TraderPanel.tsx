@@ -40,7 +40,7 @@ export default function TraderPanel() {
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.7)' }}
       onClick={() => {
-        dismissTrader();
+        // 只关闭面板，保留商队（玩家可以再次点击图标打开）
         setShowTraderPanel(false);
       }}
     >
@@ -67,7 +67,7 @@ export default function TraderPanel() {
           </div>
           <button
             onClick={() => {
-              dismissTrader();
+              // 只关闭面板，保留商队（玩家可以再次点击图标打开）
               setShowTraderPanel(false);
             }}
             className="text-lg hover:opacity-70 transition-opacity"

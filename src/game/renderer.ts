@@ -175,7 +175,9 @@ export class Renderer {
         ctx.restore();
       } else if (selectedBuilding && !tile.building) {
         const canPlaceOnWater = selectedBuilding === BuildingType.BRIDGE && tile.terrain === TerrainType.WATER;
-        const canPlaceOnNormal = tile.terrain !== TerrainType.WATER && tile.terrain !== TerrainType.FOREST;
+        const canPlaceOnNormal = tile.terrain !== TerrainType.WATER && 
+                                  tile.terrain !== TerrainType.FOREST &&
+                                  tile.terrain !== TerrainType.MOUNTAIN;
 
         if (canPlaceOnWater || canPlaceOnNormal) {
           ctx.save();
@@ -297,6 +299,36 @@ export class Renderer {
           const dy = ((dotSeed + i * 11) % 40) + 2;
           ctx.fillRect(sx + dx, sy + dy, 1.5, 1.5);
         }
+        break;
+      }
+      case TerrainType.MOUNTAIN: {
+        // 山体基底颜色
+        ctx.fillStyle = '#5a5a5a';
+        ctx.fillRect(sx, sy, tw, th);
+        // 添加山体纹理
+        ctx.fillStyle = '#4a4a4a';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw * 0.1, sy + th);
+        ctx.lineTo(sx + tw * 0.5, sy + th * 0.2);
+        ctx.lineTo(sx + tw * 0.9, sy + th);
+        ctx.closePath();
+        ctx.fill();
+        // 雪顶
+        ctx.fillStyle = '#e0e0e0';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw * 0.35, sy + th * 0.3);
+        ctx.lineTo(sx + tw * 0.5, sy + th * 0.15);
+        ctx.lineTo(sx + tw * 0.65, sy + th * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        // 阴影
+        ctx.fillStyle = '#3a3a3a';
+        ctx.beginPath();
+        ctx.moveTo(sx + tw * 0.5, sy + th * 0.2);
+        ctx.lineTo(sx + tw * 0.9, sy + th);
+        ctx.lineTo(sx + tw * 0.5, sy + th);
+        ctx.closePath();
+        ctx.fill();
         break;
       }
     }

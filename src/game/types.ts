@@ -5,6 +5,7 @@ export enum TerrainType {
   WATER = 'water',
   DESERT = 'desert',
   FOREST = 'forest',
+  MOUNTAIN = 'mountain',  // 山体
 }
 
 export enum BuildingType {

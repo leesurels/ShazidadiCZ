@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { useGameStore } from '@/game/store';
-import { BUILDING_DEFS, BUILD_ORDER, BUILDING_UNLOCKS } from '@/game/constants';
+import { BUILDING_DEFS, BUILD_ORDER, BUILDING_UNLOCKS, TECH_DEFS } from '@/game/constants';
 import { BuildingType, TerrainType } from '@/game/types';
+import { toast } from 'sonner';
 
 export default function BuildBar() {
   const {
@@ -24,15 +25,76 @@ export default function BuildBar() {
     return unlockedBuildings.includes(type);
   };
 
-  // Get unlock requirement text
+  // Get unlock requirement text (for display purposes)
   const getUnlockText = (type: BuildingType): string | null => {
     if (isUnlocked(type)) return null;
     const req = BUILDING_UNLOCKS[type];
     if (!req) return '人口达到50';
-    if (req.population) {
-      return `人口达到${req.population}`;
+    
+    const parts: string[] = [];
+    
+    // Add tech requirement if exists
+    if (req.tech) {
+      const techDef = TECH_DEFS[req.tech];
+      if (techDef) {
+        parts.push(`研究「${techDef.name}」`);
+      }
     }
-    return null;
+    
+    // Add population requirement if exists
+    if (req.population) {
+      parts.push(`人口达到${req.population}`);
+    }
+    
+    return parts.length > 0 ? parts.join('并') : null;
+  };
+  
+  // Get unlock requirements for toast message
+  const getUnlockRequirements = (type: BuildingType): { tech?: string; population?: number } => {
+    const req = BUILDING_UNLOCKS[type];
+    if (!req) return { population: 50 };
+    
+    const result: { tech?: string; population?: number } = {};
+    
+    if (req.tech) {
+      const techDef = TECH_DEFS[req.tech];
+      if (techDef) {
+        result.tech = techDef.name;
+      }
+    }
+    
+    if (req.population) {
+      result.population = req.population;
+    }
+    
+    return result;
+  };
+
+  // Handle click on locked building - show unlock requirements
+  const handleLockedBuildingClick = (type: BuildingType) => {
+    const def = BUILDING_DEFS[type];
+    const reqs = getUnlockRequirements(type);
+    
+    let message = '';
+    if (reqs.tech && reqs.population) {
+      message = `需要研究「${reqs.tech}」并人口达到 ${reqs.population} 才能解锁「${def.name}」`;
+    } else if (reqs.population) {
+      message = `需要人口达到 ${reqs.population} 才能解锁「${def.name}」`;
+    } else if (reqs.tech) {
+      message = `需要研究「${reqs.tech}」才能解锁「${def.name}」`;
+    } else {
+      message = `需要人口达到 50 才能解锁「${def.name}」`;
+    }
+    
+    toast.info(`🔒 ${def.name} 未解锁`, {
+      description: message,
+      duration: 3000,
+      style: {
+        background: 'linear-gradient(to bottom, #2a1500, #1a0a00)',
+        color: '#FFD700',
+        border: '1px solid rgba(218,165,32,0.4)',
+      },
+    });
   };
 
   return (
@@ -61,7 +123,10 @@ export default function BuildBar() {
             <button
               key={type}
               onClick={() => {
-                if (!unlocked) return;
+                if (!unlocked) {
+                  handleLockedBuildingClick(type);
+                  return;
+                }
                 if (isSelected) {
                   selectBuilding(null);
                   setShowBuildingInfo(false);
@@ -79,14 +144,13 @@ export default function BuildBar() {
                   ? '2px solid #FFD700'
                   : '1px solid rgba(255,255,255,0.1)',
                 opacity: unlocked ? (canAfford ? 1 : 0.6) : 0.4,
-                cursor: unlocked ? 'pointer' : 'not-allowed',
+                cursor: 'pointer',
                 position: 'relative',
               }}
               title={unlocked 
                 ? `${def.name} (💰${def.cost.gold} 🪵${def.cost.wood} 🪨${def.cost.stone})`
                 : `🔒 ${def.name} - ${unlockText || '未解锁'}`
               }
-              disabled={!unlocked}
             >
               {/* Lock icon for locked buildings */}
               {!unlocked && (
@@ -114,7 +178,9 @@ export default function BuildBar() {
               )}
               {def.needsNearbyTerrain && unlocked && (
                 <span className="text-[8px] text-blue-300">
-                  {def.needsNearbyTerrain.type === TerrainType.WATER ? '💧靠近水域' : '🌲靠近森林'}
+                  {def.needsNearbyTerrain.type === TerrainType.WATER ? '💧靠近水域' : 
+                   def.needsNearbyTerrain.type === TerrainType.FOREST ? '🌲靠近森林' :
+                   def.needsNearbyTerrain.type === TerrainType.MOUNTAIN ? '⛰️靠近山体' : ''}
                 </span>
               )}
             </button>

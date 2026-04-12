@@ -6,10 +6,13 @@ import { openEventLog } from './EventLog';
 import { toast } from 'sonner';
 
 export default function TopBar() {
-  const { currentRank, setShowStatsPanel, notifications, saveGame, setShowStartScreen, isRunning, currentSaveSlot, getCurrentSlotInfo } = useGameStore();
+  const { currentRank, setShowStatsPanel, notifications, saveGame, setShowStartScreen, isRunning, currentSaveSlot, getCurrentSlotInfo, currentTrader, tickCount, setShowTraderPanel } = useGameStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const currentSlotInfo = getCurrentSlotInfo();
+
+  // 计算商队剩余停留时间
+  const traderRemainingDays = currentTrader ? Math.max(0, currentTrader.departureTick - tickCount) : 0;
 
   // 保存游戏
   const handleSave = () => {
@@ -138,6 +141,32 @@ export default function TopBar() {
             </span>
           )}
         </button>
+
+        {/* Trader notification - 显示商队到达提示 */}
+        {currentTrader && (
+          <button
+            onClick={() => setShowTraderPanel(true)}
+            className="relative p-1.5 rounded transition-all active:scale-90 animate-pulse"
+            style={{
+              color: '#FFD700',
+              background: 'linear-gradient(135deg, rgba(218,165,32,0.3), rgba(184,134,11,0.2))',
+              border: '1px solid rgba(218,165,32,0.5)',
+              boxShadow: '0 0 10px rgba(218,165,32,0.3)',
+            }}
+            title={`${currentTrader.emoji} ${currentTrader.name} - 点击交易`}
+          >
+            <span className="text-lg">{currentTrader.emoji}</span>
+            <span
+              className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-3.5 flex items-center justify-center rounded-full text-[9px] font-bold px-0.5"
+              style={{
+                background: '#B8860B',
+                color: '#fff',
+              }}
+            >
+              {traderRemainingDays > 0 ? `${traderRemainingDays}天` : '!'}
+            </span>
+          </button>
+        )}
 
         {/* Save button */}
         <button

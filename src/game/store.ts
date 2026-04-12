@@ -940,6 +940,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (tile.terrain === TerrainType.WATER) {
       if (buildingType !== BuildingType.BRIDGE) return false;
     }
+    if (tile.terrain === TerrainType.MOUNTAIN) {
+      return false;  // 山体上不能建造建筑
+    }
     if (tile.building !== null) return false;
     if (tile.terrain === TerrainType.FOREST) return false;
 
@@ -1281,7 +1284,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mood: 'neutral',
     };
 
-    set({ currentTrader: trader, showTraderPanel: true });
+    // 商队到达时不自动打开面板，只设置状态，由玩家主动点击图标打开
+    set({ currentTrader: trader });
 
     // Add notification
     const notification: GameNotification = {
