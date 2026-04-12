@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/game/store';
 import { BUILDING_DEFS, BUILD_ORDER, BUILDING_UNLOCKS } from '@/game/constants';
-import { BuildingType } from '@/game/types';
+import { BuildingType, TerrainType } from '@/game/types';
 
 export default function BuildBar() {
   const {
@@ -111,6 +111,11 @@ export default function BuildBar() {
               </span>
               {!canAfford && unlocked && (
                 <span className="text-[8px] text-red-400">资源不足</span>
+              )}
+              {def.needsNearbyTerrain && unlocked && (
+                <span className="text-[8px] text-blue-300">
+                  {def.needsNearbyTerrain.type === TerrainType.WATER ? '💧靠近水域' : '🌲靠近森林'}
+                </span>
               )}
             </button>
           );
