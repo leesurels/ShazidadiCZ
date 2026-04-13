@@ -208,7 +208,6 @@ export default function MiniMap({ size = 120 }: MiniMapProps) {
 
   return (
     <div
-      className="absolute bottom-4 right-4 z-30"
       style={{
         width: size,
         height: size,

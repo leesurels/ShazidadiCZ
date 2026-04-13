@@ -6,6 +6,7 @@ import { Renderer } from '@/game/renderer';
 import { InputHandler } from '@/game/inputHandler';
 import { GameLoop } from '@/game/gameLoop';
 import { TILE_WIDTH, TILE_HEIGHT, MAP_SIZE } from '@/game/constants';
+import MiniMap from './MiniMap';
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,6 +75,10 @@ export default function GameCanvas() {
         className="absolute inset-0 w-full h-full"
         style={{ touchAction: 'none' }}
       />
+      {/* 嵌入的小地图 - 左下角，不遮挡功能按钮 */}
+      <div className="absolute bottom-2 left-2 z-20">
+        <MiniMap size={100} />
+      </div>
     </div>
   );
 }
